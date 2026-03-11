@@ -1,0 +1,175 @@
+-- ============================================================
+-- rust-vue-admin 开发阶段：快速重置初始化数据
+-- 只清数据，不删表！用户表(sys_users)数据保留不动。
+-- 使用方法：mysql -u root -p rustvueadmin < scripts/reset_data.sql
+-- ============================================================
+
+SET NAMES utf8mb4;
+
+-- ============================================================
+-- 1. 清理数据（按外键依赖顺序）
+-- ============================================================
+DELETE FROM sys_authority_menus;
+DELETE FROM casbin_rules;
+DELETE FROM sys_apis;
+DELETE FROM sys_base_menus;
+DELETE FROM sys_authorities;
+
+-- 重置自增ID
+ALTER TABLE sys_base_menus AUTO_INCREMENT = 1;
+ALTER TABLE sys_apis AUTO_INCREMENT = 1;
+ALTER TABLE casbin_rules AUTO_INCREMENT = 1;
+
+-- ============================================================
+-- 2. 角色数据
+-- ============================================================
+INSERT INTO sys_authorities (authority_id, authority_name, parent_id, default_router, created_at, updated_at)
+VALUES
+    (888, '超级管理员', 0, 'dashboard', NOW(), NOW());
+
+-- ============================================================
+-- 3. 菜单数据
+-- ============================================================
+INSERT INTO sys_base_menus
+    (id, parent_id, path, name, hidden, component, sort, keep_alive, default_menu, title, icon, close_tab, created_at, updated_at)
+VALUES
+    -- 仪表盘（顶级，id=1）
+    (1,  0, 'dashboard',   'dashboard',   0, 'view/dashboard/index.vue',                      1, 1, 0, '仪表盘',     'odometer',    0, NOW(), NOW()),
+    -- 超级管理员（顶级，id=2）
+    (2,  0, 'superAdmin',  'superAdmin',  0, 'view/superAdmin/index.vue',                     2, 0, 0, '超级管理员', 'user',        0, NOW(), NOW()),
+    -- 超级管理员子菜单
+    (3,  2, 'authority',   'authority',   0, 'view/superAdmin/authority/authority.vue',         1, 0, 0, '角色管理',   'avatar',      0, NOW(), NOW()),
+    (4,  2, 'menu',        'menu',        0, 'view/superAdmin/menu/menu.vue',                  2, 0, 0, '菜单管理',   'tickets',     0, NOW(), NOW()),
+    (5,  2, 'api',         'api',         0, 'view/superAdmin/api/api.vue',                    3, 0, 0, 'API管理',    'platform',    0, NOW(), NOW()),
+    (6,  2, 'user',        'user',        0, 'view/superAdmin/user/user.vue',                  4, 0, 0, '用户管理',   'coordinate',  0, NOW(), NOW()),
+    -- 个人信息（隐藏菜单，用于顶部个人信息入口跳转）
+    (7,  0, 'person',      'person',      1, 'view/person/person.vue',                          0, 0, 0, '个人信息',   'avatar',      0, NOW(), NOW());
+
+-- 注意：字典管理(id=8)、操作记录(id=9)、系统工具(id=10,11,12) 暂不添加，后续需要时加回
+
+-- ============================================================
+-- 4. 角色-菜单绑定（超级管理员888 绑定所有菜单）
+-- ============================================================
+INSERT INTO sys_authority_menus (sys_base_menu_id, sys_authority_authority_id)
+VALUES
+    (1, 888),
+    (2, 888),
+    (3, 888),
+    (4, 888),
+    (5, 888),
+    (6, 888),
+    (7, 888);
+
+-- ============================================================
+-- 5. API 数据
+-- ============================================================
+INSERT INTO sys_apis (path, description, api_group, method, created_at, updated_at)
+VALUES
+    -- 基础接口
+    ('/base/login',                             '用户登录',         'base',      'POST', NOW(), NOW()),
+    ('/base/register',                          '用户注册',         'base',      'POST', NOW(), NOW()),
+    ('/base/captcha',                           '获取验证码',       'base',      'GET',  NOW(), NOW()),
+    -- 用户接口
+    ('/user/getUserInfo',                       '获取用户信息',     'user',      'GET',  NOW(), NOW()),
+    ('/user/getUserList',                       '获取用户列表',     'user',      'POST', NOW(), NOW()),
+    ('/user/setUserAuthority',                  '设置用户角色',     'user',      'POST', NOW(), NOW()),
+    ('/user/deleteUser',                        '删除用户',         'user',      'DELETE', NOW(), NOW()),
+    ('/user/setSelfInfo',                       '修改个人信息',     'user',      'PUT',  NOW(), NOW()),
+    ('/user/setUserInfo',                       '修改用户信息',     'user',      'PUT',  NOW(), NOW()),
+    ('/user/resetPassword',                     '重置密码',         'user',      'POST', NOW(), NOW()),
+    ('/user/setUserEnable',                     '设置用户启用状态', 'user',      'POST', NOW(), NOW()),
+    ('/user/changePassword',                    '修改密码',         'user',      'POST', NOW(), NOW()),
+    ('/user/admin_register',                    '管理员注册用户',   'user',      'POST', NOW(), NOW()),
+    -- JWT 接口
+    ('/jwt/jsonInBlacklist',                    '拉黑JWT',          'jwt',       'POST', NOW(), NOW()),
+    -- 角色接口
+    ('/authority/createAuthority',              '创建角色',         'authority', 'POST', NOW(), NOW()),
+    ('/authority/deleteAuthority',              '删除角色',         'authority', 'POST', NOW(), NOW()),
+    ('/authority/updateAuthority',              '更新角色',         'authority', 'PUT',  NOW(), NOW()),
+    ('/authority/getAuthorityList',             '获取角色列表',     'authority', 'POST', NOW(), NOW()),
+    ('/authority/setDataAuthority',             '设置数据权限',     'authority', 'POST', NOW(), NOW()),
+    ('/authority/copyAuthority',                '拷贝角色',         'authority', 'POST', NOW(), NOW()),
+    -- 菜单接口
+    ('/menu/getMenu',                           '获取用户菜单',     'menu',      'POST', NOW(), NOW()),
+    ('/menu/getMenuList',                       '获取菜单列表',     'menu',      'POST', NOW(), NOW()),
+    ('/menu/addBaseMenu',                       '新增菜单',         'menu',      'POST', NOW(), NOW()),
+    ('/menu/deleteBaseMenu',                    '删除菜单',         'menu',      'POST', NOW(), NOW()),
+    ('/menu/updateBaseMenu',                    '更新菜单',         'menu',      'POST', NOW(), NOW()),
+    ('/menu/getMenuAuthority',                  '获取角色菜单',     'menu',      'POST', NOW(), NOW()),
+    ('/menu/addMenuAuthority',                  '设置角色菜单',     'menu',      'POST', NOW(), NOW()),
+    ('/menu/getBaseMenuTree',                   '获取菜单树',       'menu',      'POST', NOW(), NOW()),
+    ('/menu/getBaseMenuById',                   '根据ID获取菜单',   'menu',      'POST', NOW(), NOW()),
+    -- API 接口
+    ('/api/createApi',                          '创建API',          'api',       'POST', NOW(), NOW()),
+    ('/api/deleteApi',                          '删除API',          'api',       'POST', NOW(), NOW()),
+    ('/api/updateApi',                          '更新API',          'api',       'POST', NOW(), NOW()),
+    ('/api/getApiList',                         '获取API列表',      'api',       'POST', NOW(), NOW()),
+    ('/api/getAllApis',                          '获取所有API',      'api',       'POST', NOW(), NOW()),
+    ('/api/deleteApisByIds',                    '批量删除API',      'api',       'DELETE', NOW(), NOW()),
+    ('/api/getApiById',                         '根据ID获取API',    'api',       'POST', NOW(), NOW()),
+    ('/api/getApiGroups',                       '获取API分组',      'api',       'GET',  NOW(), NOW()),
+    -- Casbin 接口
+    ('/casbin/UpdateCasbin',                    '更新角色API权限',  'casbin',    'POST', NOW(), NOW()),
+    ('/casbin/getPolicyPathByAuthorityId',      '获取角色权限列表', 'casbin',    'POST', NOW(), NOW());
+
+-- ============================================================
+-- 6. Casbin 权限规则（超级管理员888 拥有所有 API 权限）
+-- ============================================================
+INSERT INTO casbin_rules (ptype, v0, v1, v2, v3, v4, v5)
+VALUES
+    ('p', '888', '/base/login',                             'POST',   '', '', ''),
+    ('p', '888', '/base/register',                          'POST',   '', '', ''),
+    ('p', '888', '/base/captcha',                           'GET',    '', '', ''),
+    ('p', '888', '/user/getUserInfo',                       'GET',    '', '', ''),
+    ('p', '888', '/user/getUserList',                       'POST',   '', '', ''),
+    ('p', '888', '/user/setUserAuthority',                  'POST',   '', '', ''),
+    ('p', '888', '/user/deleteUser',                        'DELETE', '', '', ''),
+    ('p', '888', '/user/setSelfInfo',                       'PUT',    '', '', ''),
+    ('p', '888', '/user/setUserInfo',                       'PUT',    '', '', ''),
+    ('p', '888', '/user/resetPassword',                     'POST',   '', '', ''),
+    ('p', '888', '/user/setUserEnable',                     'POST',   '', '', ''),
+    ('p', '888', '/user/changePassword',                    'POST',   '', '', ''),
+    ('p', '888', '/user/admin_register',                    'POST',   '', '', ''),
+    ('p', '888', '/jwt/jsonInBlacklist',                    'POST',   '', '', ''),
+    ('p', '888', '/authority/createAuthority',              'POST',   '', '', ''),
+    ('p', '888', '/authority/deleteAuthority',              'POST',   '', '', ''),
+    ('p', '888', '/authority/updateAuthority',              'PUT',    '', '', ''),
+    ('p', '888', '/authority/getAuthorityList',             'POST',   '', '', ''),
+    ('p', '888', '/authority/setDataAuthority',             'POST',   '', '', ''),
+    ('p', '888', '/authority/copyAuthority',                'POST',   '', '', ''),
+    ('p', '888', '/menu/getMenu',                           'POST',   '', '', ''),
+    ('p', '888', '/menu/getMenuList',                       'POST',   '', '', ''),
+    ('p', '888', '/menu/addBaseMenu',                       'POST',   '', '', ''),
+    ('p', '888', '/menu/deleteBaseMenu',                    'POST',   '', '', ''),
+    ('p', '888', '/menu/updateBaseMenu',                    'POST',   '', '', ''),
+    ('p', '888', '/menu/getMenuAuthority',                  'POST',   '', '', ''),
+    ('p', '888', '/menu/addMenuAuthority',                  'POST',   '', '', ''),
+    ('p', '888', '/menu/getBaseMenuTree',                   'POST',   '', '', ''),
+    ('p', '888', '/menu/getBaseMenuById',                   'POST',   '', '', ''),
+    ('p', '888', '/api/createApi',                          'POST',   '', '', ''),
+    ('p', '888', '/api/deleteApi',                          'POST',   '', '', ''),
+    ('p', '888', '/api/updateApi',                          'POST',   '', '', ''),
+    ('p', '888', '/api/getApiList',                         'POST',   '', '', ''),
+    ('p', '888', '/api/getAllApis',                          'POST',   '', '', ''),
+    ('p', '888', '/api/deleteApisByIds',                    'DELETE', '', '', ''),
+    ('p', '888', '/api/getApiById',                         'POST',   '', '', ''),
+    ('p', '888', '/api/getApiGroups',                       'GET',    '', '', ''),
+    ('p', '888', '/casbin/UpdateCasbin',                    'POST',   '', '', ''),
+    ('p', '888', '/casbin/getPolicyPathByAuthorityId',      'POST',   '', '', '');
+
+-- ============================================================
+-- 完成！
+-- 注意：sys_users 表数据未清理，如需重建 admin 用户请手动操作：
+--   DELETE FROM sys_users;
+--   然后通过前端 /init/initdb 接口重新初始化
+-- ============================================================
+SELECT '✅ 数据重置完成！' AS result;
+SELECT '角色' AS '数据表', COUNT(*) AS '记录数' FROM sys_authorities
+UNION ALL
+SELECT '菜单', COUNT(*) FROM sys_base_menus
+UNION ALL
+SELECT '菜单绑定', COUNT(*) FROM sys_authority_menus
+UNION ALL
+SELECT 'API', COUNT(*) FROM sys_apis
+UNION ALL
+SELECT 'Casbin规则', COUNT(*) FROM casbin_rules;

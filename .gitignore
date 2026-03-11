@@ -1,0 +1,45 @@
+# =====================
+# macOS 系统文件
+# =====================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# =====================
+# IDE / 编辑器
+# =====================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.iml
+
+# =====================
+# Rust 后端 (server/)
+# =====================
+server/target/
+server/log/
+server/config.yaml
+
+# =====================
+# Vue 前端 (web/)
+# =====================
+web/node_modules/
+web/dist/
+web/package-lock.json
+web/yarn.lock
+web/bun.lockb
+
+# =====================
+# 通用
+# =====================
+*.log
+*.tmp
+*.bak
+*.pid
+.env
+.env.*
+!.env.development
+!.env.production

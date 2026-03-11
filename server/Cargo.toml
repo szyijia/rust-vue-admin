@@ -1,0 +1,134 @@
+[package]
+name = "rust-vue-admin"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["rust-vue-admin"]
+description = "A full-stack admin framework based on Rust + Vue3, inspired by Gin-Vue-Admin"
+
+[[bin]]
+name = "rust-vue-admin"
+path = "src/main.rs"
+
+[dependencies]
+# ===== Web 框架 =====
+axum = { version = "0.8", features = ["multipart", "ws", "macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "fs", "limit", "timeout", "compression-gzip"] }
+hyper = { version = "1", features = ["full"] }
+
+# ===== ORM / 数据库 =====
+sea-orm = { version = "1.1", features = [
+    "sqlx-mysql",
+    "sqlx-postgres",
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-chrono",
+    "with-uuid",
+    "with-json",
+] }
+sea-orm-migration = { version = "1.1", features = ["sqlx-mysql", "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls"] }
+
+# ===== 序列化 =====
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+
+# ===== 配置管理 =====
+config = { version = "0.14", features = ["yaml"] }
+
+# ===== 日志 =====
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt", "chrono"] }
+tracing-appender = "0.2"
+
+# ===== JWT =====
+jsonwebtoken = "9"
+
+# ===== 权限控制 =====
+casbin = { version = "2", features = ["runtime-tokio"] }
+
+# ===== Redis =====
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager", "cluster-async"] }
+
+# ===== 密码哈希 =====
+bcrypt = "0.15"
+argon2 = "0.5"
+
+# ===== UUID =====
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# ===== 时间 =====
+chrono = { version = "0.4", features = ["serde"] }
+
+# ===== API 文档 (OpenAPI) =====
+utoipa = { version = "4", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-swagger-ui = { version = "8", features = ["axum"] }
+
+# ===== 参数验证 =====
+validator = { version = "0.19", features = ["derive"] }
+
+# ===== 邮件 =====
+lettre = { version = "0.11", features = ["tokio1-native-tls", "builder"] }
+
+# ===== 定时任务 =====
+tokio-cron-scheduler = "0.13"
+
+# ===== 文件上传 / OSS =====
+aws-sdk-s3 = "1"           # 兼容 MinIO / S3 / 阿里云OSS
+aws-config = "1"
+aws-credential-types = "1"
+multer = "3"               # multipart 解析
+
+# ===== 验证码 =====
+captcha = "0.0.9"
+image = "0.25"
+base64 = "0.22"
+
+# ===== 错误处理 =====
+anyhow = "1"
+thiserror = "2"
+
+# ===== 工具库 =====
+once_cell = "1"
+lazy_static = "1"
+regex = "1"
+rand = "0.8"
+hex = "0.4"
+sha2 = "0.10"
+hmac = "0.12"
+md5 = "0.7"
+
+# ===== 异步工具 =====
+futures = "0.3"
+async-trait = "0.1"
+tokio-util = { version = "0.7", features = ["io"] }
+
+# ===== HTTP 客户端 =====
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+
+# ===== 其他 =====
+dotenv = "0.15"
+mime = "0.3"
+mime_guess = "2"
+bytes = "1"
+parking_lot = "0.12"
+dashmap = "6"
+itertools = "0.13"
+
+[dev-dependencies]
+axum-test = "17"
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
