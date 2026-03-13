@@ -51,7 +51,7 @@
 
     <BottomInfo class="left-0 right-0 absolute bottom-3 mx-auto w-full z-20">
       <div class="links items-center justify-center gap-2 hidden md:flex">
-        <a href="https://github.com/rust-vue-admin/rust-vue-admin" target="_blank">
+        <a href="https://github.com/szyijia/rust-vue-admin" target="_blank">
           <img src="@/assets/github.png" class="w-8 h-8" alt="github" />
         </a>
       </div>

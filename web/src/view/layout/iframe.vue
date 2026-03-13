@@ -34,7 +34,7 @@ watchEffect(() => {
 const router = useRouter()
 const route = useRoute()
 
-const url = route.query.url || 'https://github.com/rust-vue-admin/rust-vue-admin'
+const url = route.query.url || 'https://www.rust-vue-admin.com'
 
 onMounted(() => {
   // 挂载一些通用的事件

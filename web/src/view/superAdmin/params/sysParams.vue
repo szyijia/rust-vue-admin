@@ -123,7 +123,8 @@
         </p>
         <p class="text-sm text-gray-600">
           后端需要提前
-          <code class="bg-blue-100 px-1 py-0.5 rounded">// 后端 Rust 服务中引入对应的 service 模块</code>
+          <code class="bg-blue-100 px-1 py-0.5 rounded">import
+        "github.com/szyijia/rust-vue-admin/server/service/system"</code>
         </p>
         <p class="mb-2 text-sm text-gray-600">
           然后调用

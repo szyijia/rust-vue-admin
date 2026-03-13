@@ -13,11 +13,12 @@ export const login = (data) => {
 
 // @Summary 获取验证码
 // @Produce  application/json
-// @Router /base/captcha [get]
+// @Param data body {username:"string",password:"string"}
+// @Router /base/captcha [post]
 export const captcha = () => {
   return service({
     url: '/base/captcha',
-    method: 'get'
+    method: 'post'
   })
 }
 

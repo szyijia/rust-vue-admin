@@ -4,7 +4,7 @@
       <el-table-column prop="name" label="插件标题" show-overflow-tooltip width="200">
         <template #default="{ row }">
           <a class="text-black dark:text-white decoration-black/20 dark:decoration-white/20 hover:text-active"
-            :href="`https://github.com/szyxiii/rust-vue-admin`" target="_blank">{{ row.name }}</a>
+            :href="`https://github.com/szyijia/rust-vue-admin`" target="_blank">{{ row.name }}</a>
         </template>
       </el-table-column>
       <el-table-column prop="resume" label="简介" show-overflow-tooltip></el-table-column>

@@ -8,22 +8,22 @@
           </template>
           <div>
             <div class="w-full flex items-center justify-center">
-              <a href="https://github.com/rust-vue-admin/rust-vue-admin">
+              <a href="https://github.com/szyijia/rust-vue-admin">
                 <img class="org-img dom-center" src="@/assets/logo.png" alt="rust-vue-admin" />
               </a>
             </div>
             <div class="w-full flex items-center justify-around">
-              <a href="https://github.com/rust-vue-admin/rust-vue-admin">
+              <a href="https://github.com/szyijia/rust-vue-admin">
                 <img class="dom-center"
-                  src="https://img.shields.io/github/watchers/rust-vue-admin/rust-vue-admin.svg?label=Watch" alt="" />
+                  src="https://img.shields.io/github/watchers/szyijia/rust-vue-admin.svg?label=Watch" alt="" />
               </a>
-              <a href="https://github.com/rust-vue-admin/rust-vue-admin">
+              <a href="https://github.com/szyijia/rust-vue-admin">
                 <img class="dom-center"
-                  src="https://img.shields.io/github/stars/rust-vue-admin/rust-vue-admin.svg?style=social" alt="" />
+                  src="https://img.shields.io/github/stars/szyijia/rust-vue-admin.svg?style=social" alt="" />
               </a>
-              <a href="https://github.com/rust-vue-admin/rust-vue-admin">
-                <img class="dom-center"
-                  src="https://img.shields.io/github/forks/rust-vue-admin/rust-vue-admin.svg?label=Fork" alt="" />
+              <a href="https://github.com/szyijia/rust-vue-admin">
+                <img class="dom-center" src="https://img.shields.io/github/forks/szyijia/rust-vue-admin.svg?label=Fork"
+                  alt="" />
               </a>
             </div>
           </div>
@@ -34,7 +34,7 @@
           </template>
           <div>
             <div class="w-full flex items-center justify-center">
-              <a href="https://github.com/rust-vue-admin">
+              <a href="https://github.com/szyijia/rust-vue-admin">
                 <img class="org-img dom-center" src="@/assets/logo.png" alt="rust-vue-admin" />
               </a>
             </div>

@@ -4,7 +4,6 @@ import getPageTitle from '@/utils/page'
 import router from '@/router'
 import Nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
-import { checkDB } from '@/api/initdb'
 
 // 配置 NProgress
 Nprogress.configure({
@@ -76,21 +75,21 @@ function addRouteByChildren(route, segments = [], parentName = null) {
 
   // 还有子节点，继续向下收集路径片段（忽略外链片段）
   if (route?.children && route.children.length) {
-    if (!parentName) {
+    if(!parentName){
       const firstChild = route.children[0]
       if (firstChild) {
-        const fullParentPath = [...segments, route.path].filter(Boolean).join('/')
-        const redirectPath = normalizeRelativePath(
-          [fullParentPath, firstChild.path].filter(Boolean).join('/')
-        )
-        const parentRoute = {
-          path: normalizeRelativePath(fullParentPath),
-          name: route.name, // 保留父级名称，以便 defaultRouter 可以指向它
-          meta: route.meta,
-          redirect: "/layout/" + redirectPath,
-        }
-        router.addRoute('layout', parentRoute)
-      }
+         const fullParentPath = [...segments, route.path].filter(Boolean).join('/')
+         const redirectPath = normalizeRelativePath(
+           [fullParentPath, firstChild.path].filter(Boolean).join('/')
+         )
+         const parentRoute = {
+           path: normalizeRelativePath(fullParentPath),
+           name: route.name, // 保留父级名称，以便 defaultRouter 可以指向它
+           meta: route.meta,
+           redirect: "/layout/" + redirectPath,
+         }
+         router.addRoute('layout', parentRoute)
+       }
     }
     const nextSegments = isExternalUrl(route.path) ? segments : [...segments, route.path]
     route.children.forEach((child) => addRouteByChildren(child, nextSegments, parentName))
@@ -138,7 +137,7 @@ const setupRouter = async (userStore) => {
         if (r?.name !== 'layout') toRegister.push(r)
       })
     }
-    toRegister.forEach((r) => addRouteByChildren(r, [], null))
+  toRegister.forEach((r) => addRouteByChildren(r, [], null))
     return true
   } catch (error) {
     console.error('Setup router failed:', error)
@@ -170,30 +169,17 @@ router.beforeEach(async (to, from) => {
     return true
   }
 
-  // 检查数据库是否已初始化（仅在非 Init 页面时检查）
-  if (to.name !== 'Init') {
-    try {
-      const res = await checkDB()
-      if (res.code === 0 && res.data && res.data.need_init === true) {
-        // 数据库未初始化，跳转到初始化页面
-        return { name: 'Init', replace: true }
-      }
-    } catch (_) {
-      // checkDB 失败时不阻断，继续正常流程
-    }
-  }
-
   // 白名单路由处理
   if (WHITE_LIST.includes(to.name)) {
     if (token) {
-      if (!routerStore.asyncRouterFlag) {
+      if(!routerStore.asyncRouterFlag){
         await setupRouter(userStore)
       }
-      if (userStore.userInfo.authority.defaultRouter) {
+      if(userStore.userInfo.authority.defaultRouter){
         return { name: userStore.userInfo.authority.defaultRouter }
       }
     }
-    return true
+    return  true
   }
 
   // 需要登录的路由处理

@@ -5,7 +5,7 @@ const service = axios.create()
 export function Commits(page) {
   return service({
     url:
-      'https://api.github.com/repos/rust-vue-admin/rust-vue-admin/commits?page=' +
+      'https://api.github.com/repos/szyijia/rust-vue-admin/commits?page=' +
       page,
     method: 'get'
   })
@@ -13,7 +13,7 @@ export function Commits(page) {
 
 export function Members() {
   return service({
-    url: 'https://api.github.com/orgs/rust-vue-admin/members',
+    url: 'https://api.github.com/orgs/szyijia/members',
     method: 'get'
   })
 }

@@ -24,11 +24,11 @@ const wikis = [
   },
   {
     title: 'RVA 文档',
-    url: 'https://github.com/szyxiii/rust-vue-admin'
+    url: 'https://github.com/szyijia/rust-vue-admin'
   },
   {
     title: 'GitHub 仓库',
-    url: 'https://github.com/szyxiii/rust-vue-admin'
+    url: 'https://github.com/szyijia/rust-vue-admin'
   }
 ]
 </script>

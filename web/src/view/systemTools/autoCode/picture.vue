@@ -1,12 +1,19 @@
 <template>
   <div>
-    <warning-bar href="https://github.com/szyxiii/rust-vue-admin" title="此功能只针对授权用户开放，点我【购买授权】" />
+    <warning-bar
+        href="https://plugin.rust-vue-admin.com/license"
+        title="此功能只针对授权用户开放，点我【购买授权】"
+    />
     <div class="gva-search-box">
       <div class="text-xl mb-2 text-gray-600">
-        AI前端工程师<a class="text-blue-600 text-sm ml-4" href="https://github.com/szyxiii/rust-vue-admin"
-          target="_blank">获取AiPath</a>
+        AI前端工程师<a
+          class="text-blue-600 text-sm ml-4"
+          href="https://plugin.rust-vue-admin.com/#/layout/userInfo/center"
+          target="_blank"
+      >获取AiPath</a
+      >
       </div>
-
+      
       <!-- 选项模式 -->
       <div class="mb-4">
         <div class="mb-3">
@@ -21,7 +28,7 @@
           </el-radio-group>
           <el-input v-if="pageType === '其他'" v-model="pageTypeCustom" placeholder="请输入页面用途" class="w-full" />
         </div>
-
+        
         <div class="mb-3">
           <div class="text-base font-medium mb-2">主要内容板块</div>
           <el-checkbox-group v-model="contentBlocks" class="flex flex-wrap gap-2 mb-2">
@@ -46,10 +53,9 @@
             <el-checkbox label="限时特惠">限时特惠</el-checkbox>
             <el-checkbox label="其他">其他</el-checkbox>
           </el-checkbox-group>
-          <el-input v-if="contentBlocks.includes('其他')" v-model="contentBlocksCustom" placeholder="请输入其他内容板块"
-            class="w-full" />
+          <el-input v-if="contentBlocks.includes('其他')" v-model="contentBlocksCustom" placeholder="请输入其他内容板块" class="w-full" />
         </div>
-
+        
         <div class="mb-3">
           <div class="text-base font-medium mb-2">风格偏好</div>
           <el-radio-group v-model="stylePreference" class="mb-2">
@@ -62,10 +68,9 @@
             <el-radio label="奢华">奢华</el-radio>
             <el-radio label="其他">其他</el-radio>
           </el-radio-group>
-          <el-input v-if="stylePreference === '其他'" v-model="stylePreferenceCustom" placeholder="请输入风格偏好"
-            class="w-full" />
+          <el-input v-if="stylePreference === '其他'" v-model="stylePreferenceCustom" placeholder="请输入风格偏好" class="w-full" />
         </div>
-
+        
         <div class="mb-3">
           <div class="text-base font-medium mb-2">设计布局</div>
           <el-radio-group v-model="layoutDesign" class="mb-2">
@@ -85,7 +90,7 @@
           </el-radio-group>
           <el-input v-if="layoutDesign === '其他'" v-model="layoutDesignCustom" placeholder="请输入设计布局" class="w-full" />
         </div>
-
+        
         <div class="mb-3">
           <div class="text-base font-medium mb-2">配色方案</div>
           <el-radio-group v-model="colorScheme" class="mb-2">
@@ -101,23 +106,38 @@
           <el-input v-if="colorScheme === '其他'" v-model="colorSchemeCustom" placeholder="请输入配色方案" class="w-full" />
         </div>
       </div>
-
+      
       <!-- 详细描述输入框 -->
       <div class="relative">
         <div class="text-base font-medium mb-2">详细描述（可选）</div>
-        <el-input v-model="prompt" :maxlength="2000" :placeholder="placeholder" :rows="5" resize="none" type="textarea"
-          @blur="handleBlur" @focus="handleFocus" />
+        <el-input
+            v-model="prompt"
+            :maxlength="2000"
+            :placeholder="placeholder"
+            :rows="5"
+            resize="none"
+            type="textarea"
+            @blur="handleBlur"
+            @focus="handleFocus"
+        />
         <div class="flex absolute right-2 bottom-2">
           <el-tooltip effect="light">
             <template #content>
               <div>
-                此功能仅针对授权用户开放，前往<a class="text-blue-600" href="https://github.com/szyxiii/rust-vue-admin"
-                  target="_blank">购买授权</a>
+                此功能仅针对授权用户开放，前往<a
+                  class="text-blue-600"
+                  href="https://plugin.rust-vue-admin.com/license"
+                  target="_blank"
+              >购买授权</a
+              >
               </div>
             </template>
-            <el-button type="primary" @click="llmAutoFunc()">
+            <el-button
+                type="primary"
+                @click="llmAutoFunc()"
+            >
               <el-icon size="18">
-                <ai-gva />
+                <ai-gva/>
               </el-icon>
               生成
             </el-button>
@@ -127,7 +147,7 @@
     </div>
     <div>
       <div v-if="!outPut">
-        <el-empty :image-size="200" />
+        <el-empty :image-size="200"/>
       </div>
       <div v-if="outPut && htmlFromLLM">
         <el-tabs type="border-card">
@@ -136,13 +156,22 @@
               <div v-if="!loadedComponents" class="text-gray-500 text-center py-4">
                 组件加载中...
               </div>
-              <component v-else :is="loadedComponents" class="vue-component-container w-full" />
+              <component
+                v-else
+                :is="loadedComponents" 
+                class="vue-component-container w-full"
+              />
             </div>
           </el-tab-pane>
           <el-tab-pane label="源代码">
             <div class="relative h-[500px] overflow-auto bg-gray-50 p-4 rounded">
-              <el-button type="primary" :icon="DocumentCopy" class="absolute top-2 right-2 px-2 py-1"
-                @click="copySnippet(htmlFromLLM)" plain>
+              <el-button 
+                type="primary" 
+                :icon="DocumentCopy" 
+                class="absolute top-2 right-2 px-2 py-1" 
+                @click="copySnippet(htmlFromLLM)" 
+                plain
+              >
                 复制
               </el-button>
               <pre class="mt-10 whitespace-pre-wrap">{{ htmlFromLLM }}</pre>
@@ -185,18 +214,18 @@ const handleKeydown = (event) => {
 // 复制方法：把某个字符串写进剪贴板
 const copySnippet = (vueString) => {
   navigator.clipboard.writeText(vueString)
-    .then(() => {
-      ElMessage({
-        message: '复制成功',
-        type: 'success',
+      .then(() => {
+        ElMessage({
+          message: '复制成功',
+          type: 'success',
+        })
       })
-    })
-    .catch(err => {
-      ElMessage({
-        message: '复制失败',
-        type: 'warning',
+      .catch(err => {
+        ElMessage({
+          message: '复制失败',
+          type: 'warning',
+        })
       })
-    })
 }
 
 // 选项模式相关变量
@@ -234,7 +263,7 @@ const loadVueComponent = async (vueCode) => {
   try {
     // 使用内存中的虚拟路径
     const fakePath = `virtual:component-0.vue`
-
+    
     const component = defineAsyncComponent({
       loader: async () => {
         try {
@@ -247,16 +276,16 @@ const loadVueComponent = async (vueCode) => {
               // 提取路径的最后部分，忽略查询参数
               const fileName = url.split('/').pop().split('?')[0]
               const componentFileName = fakePath.split('/').pop()
-
+              
               // 如果文件名包含我们的组件名称，或者url完全匹配fakePath
-              if (fileName === componentFileName || url === fakePath ||
-                url === `./component/0.vue`) {
+              if (fileName === componentFileName || url === fakePath || 
+                  url === `./component/0.vue`) {
                 return Promise.resolve({
                   type: '.vue',
                   getContentData: () => vueCode
                 })
               }
-
+              
               console.warn('请求未知文件:', url)
               return Promise.reject(new Error(`找不到文件: ${url}`))
             },
@@ -273,7 +302,7 @@ const loadVueComponent = async (vueCode) => {
               console.log(`[vue3-sfc-loader] [${type}]`, ...args)
             }
           }
-
+          
           // 尝试加载组件
           const comp = await loadModule(fakePath, options)
           return comp.default || comp
@@ -315,22 +344,22 @@ const loadVueComponent = async (vueCode) => {
       mounted() {
         // 创建Shadow DOM
         const shadowRoot = this.$el.attachShadow({ mode: 'open' })
-
+        
         // 创建一个容器元素
         const container = document.createElement('div')
         container.className = 'shadow-container'
         shadowRoot.appendChild(container)
-
+        
         // 提取组件中的样式
         const styleContent = vueCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)?.[1] || ''
-
+        
         // 创建样式元素并添加到Shadow DOM
         if (styleContent) {
           const style = document.createElement('style')
           style.textContent = styleContent
           shadowRoot.appendChild(style)
         }
-
+        
         // 创建Vue应用并挂载到Shadow DOM容器中
         const app = Vue.createApp({
           render: () => Vue.h(component)
@@ -357,10 +386,10 @@ const handlePageTypeChange = (value) => {
 const llmAutoFunc = async () => {
   // 构建完整的描述，包含选项模式的选择
   let fullPrompt = ''
-
+  
   // 添加页面用途
   fullPrompt += `页面用途: ${pageType.value === '其他' ? pageTypeCustom.value : pageType.value}\n`
-
+  
   // 添加内容板块
   fullPrompt += '主要内容板块: '
   const blocks = contentBlocks.value.filter(block => block !== '其他')
@@ -368,22 +397,22 @@ const llmAutoFunc = async () => {
     blocks.push(contentBlocksCustom.value)
   }
   fullPrompt += blocks.join(', ') + '\n'
-
+  
   // 添加风格偏好
   fullPrompt += `风格偏好: ${stylePreference.value === '其他' ? stylePreferenceCustom.value : stylePreference.value}\n`
-
+  
   // 添加设计布局
   fullPrompt += `设计布局: ${layoutDesign.value === '其他' ? layoutDesignCustom.value : layoutDesign.value}\n`
-
+  
   // 添加配色方案
   fullPrompt += `配色方案: ${colorScheme.value === '其他' ? colorSchemeCustom.value : colorScheme.value}\n`
-
+  
   // 添加用户的详细描述
   if (prompt.value) {
     fullPrompt += `\n详细描述: ${prompt.value}`
   }
-
-  const res = await llmAuto({ web: fullPrompt, mode: 'createWeb' })
+  
+  const res = await llmAuto({web: fullPrompt, mode: 'createWeb'})
   if (res.code === 0) {
     outPut.value = true
     // 添加返回的Vue组件代码到数组

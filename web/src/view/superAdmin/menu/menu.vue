@@ -291,7 +291,7 @@
             </el-button>
             <el-tooltip content="点击查看按钮权限配置文档" placement="top" effect="light">
               <el-icon class="cursor-pointer text-blue-500 hover:text-blue-700"
-                @click="toDoc('https://github.com/szyxiii/rust-vue-admin')">
+                @click="toDoc('https://www.rust-vue-admin.com/guide/web/button-auth.html')">
                 <QuestionFilled />
               </el-icon>
             </el-tooltip>

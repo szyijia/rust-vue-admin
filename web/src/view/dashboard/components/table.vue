@@ -10,12 +10,12 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
+import { ref } from 'vue'
 
-  // 静态数据（已移除对 GitHub API 的依赖）
-  const tableData = ref([
-    { ranking: 1, message: '项目初始化', author: 'admin', date: '2024-01-01 00:00:00' },
-  ])
+// 静态数据（已移除对 GitHub API 的依赖）
+const tableData = ref([
+  { ranking: 1, message: '项目初始化', author: 'admin', date: '2024-01-01 00:00:00' },
+])
 </script>
 
 <style scoped lang="scss"></style>

@@ -102,7 +102,7 @@ const showNext = () => {
 }
 
 const goDoc = () => {
-  window.open('https://github.com/rust-vue-admin/rust-vue-admin')
+  window.open('https://github.com/szyijia/rust-vue-admin')
 }
 
 const out = ref(false)

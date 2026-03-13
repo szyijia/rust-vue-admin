@@ -1,4 +1,3 @@
-
 import child_process from 'child_process'
 
 var url = 'https://www.rust-vue-admin.com'
