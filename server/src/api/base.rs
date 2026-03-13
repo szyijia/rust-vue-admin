@@ -46,14 +46,14 @@ pub struct LoginResponse {
 #[allow(non_snake_case)]
 pub struct UserInfo {
     #[serde(rename = "ID")]
-    pub id: i64,
+    pub id: u64,
     pub uuid: String,
     pub userName: String,
     pub nickName: String,
     pub headerImg: String,
     pub phone: String,
     pub email: String,
-    pub authorityId: i64,
+    pub authorityId: u64,
     pub authority: AuthorityInfo,
 }
 
@@ -61,7 +61,7 @@ pub struct UserInfo {
 #[derive(Debug, Serialize, Default)]
 #[allow(non_snake_case)]
 pub struct AuthorityInfo {
-    pub authorityId: i64,
+    pub authorityId: u64,
     pub authorityName: String,
     pub defaultRouter: String,
 }
@@ -74,7 +74,7 @@ pub struct RegisterRequest {
     #[validate(length(min = 8, message = "密码至少8位"))]
     pub password: String,
     pub nick_name: Option<String>,
-    pub authority_id: Option<i64>,
+    pub authority_id: Option<u64>,
 }
 
 /// 验证码响应
@@ -92,7 +92,8 @@ pub struct CaptchaResponse {
 /// 获取验证码，对应 Gin-Vue-Admin 的 baseApi.Captcha()
 /// GET /base/captcha
 pub async fn captcha(State(state): State<AppState>) -> ApiResponse<CaptchaResponse> {
-    let cfg = &state.config.captcha;
+    let config = state.get_config();
+    let cfg = &config.captcha;
 
     // 生成验证码
     let result = match generate_captcha(cfg.img_width, cfg.img_height) {
@@ -133,6 +134,9 @@ pub async fn login(
     State(state): State<AppState>,
     payload: Result<Json<LoginRequest>, JsonRejection>,
 ) -> ApiResponse<serde_json::Value> {
+    // 获取当前配置快照（支持热重载）
+    let config = state.get_config();
+
     // 处理 JSON 反序列化错误
     let Json(req) = match payload {
         Ok(json) => json,
@@ -148,7 +152,7 @@ pub async fn login(
     }
 
     // 验证码校验（open_captcha != 0 时开启验证码，有 Redis 时才校验）
-    if state.config.captcha.open_captcha != 0 {
+    if config.captcha.open_captcha != 0 {
         if let Some(redis) = &state.redis {
             let key = captcha_key(&req.captcha_id);
             let mut conn = redis.as_ref().clone();
@@ -194,7 +198,7 @@ pub async fn login(
                 &user.username,
                 user.authority_id,
                 "",
-                &state.config.jwt,
+                &config.jwt,
             ) {
                 Ok(token_result) => {
                     // 查询角色信息
@@ -253,7 +257,7 @@ pub async fn register(
     let db = db.as_ref();
 
     let nick_name = req.nick_name.unwrap_or_else(|| req.username.clone());
-    let authority_id = req.authority_id.unwrap_or(888i64);
+    let authority_id = req.authority_id.unwrap_or(888u64);
 
     match UserService::register(db, &req.username, &req.password, &nick_name, authority_id).await {
         Ok(user) => ApiResponse::ok(serde_json::json!({

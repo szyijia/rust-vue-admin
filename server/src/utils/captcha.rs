@@ -14,21 +14,21 @@ pub struct CaptchaResult {
     pub answer: String,
 }
 
-/// 纯数字字符集
-const DIGITS: &[char] = &['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+/// 纯数字字符集（captcha crate 默认字体不包含 '0'，故排除）
+const DIGITS: &[char] = &['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 /// 生成纯数字图形验证码
 pub fn generate_captcha(width: u32, height: u32) -> anyhow::Result<CaptchaResult> {
-    let _ = (width, height); // captcha 库固定尺寸，忽略参数
-
-    // 生成 4 位纯数字验证码，裁剪紧凑视图让字符更大更清晰
+    // 生成 4 位纯数字验证码
+    // 注意：captcha 库内部画布为 400x300，add_chars 后需要先 view 裁剪到目标尺寸，
+    // 再应用 Wave/Dots 等滤镜，否则 Wave 会将字符推出 text_area 导致 view 裁剪时字符被截断。
     let mut c = Captcha::new();
     c.set_chars(DIGITS)
         .add_chars(4)
+        .view(width, height)
         .apply_filter(Noise::new(0.2))
         .apply_filter(Wave::new(1.0, 10.0).horizontal())
-        .apply_filter(Dots::new(3))
-        .view(160, 60);
+        .apply_filter(Dots::new(3));
 
     // 获取答案
     let answer = c.chars_as_string();

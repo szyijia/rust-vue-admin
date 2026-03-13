@@ -8,11 +8,11 @@ use crate::config::JwtConfig;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     /// 用户 ID
-    pub user_id: i64,
+    pub user_id: u64,
     /// 用户名
     pub username: String,
     /// 角色 ID
-    pub role_id: i64,
+    pub role_id: u64,
     /// 角色名称
     pub role_name: String,
     /// 签发时间（Unix 时间戳）
@@ -34,9 +34,9 @@ pub struct TokenResult {
 
 /// 生成 JWT Token，对应 Gin-Vue-Admin 的 utils.CreateToken()
 pub fn create_token(
-    user_id: i64,
+    user_id: u64,
     username: &str,
-    role_id: i64,
+    role_id: u64,
     role_name: &str,
     cfg: &JwtConfig,
 ) -> anyhow::Result<TokenResult> {

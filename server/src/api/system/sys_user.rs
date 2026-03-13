@@ -25,20 +25,19 @@ fn default_page_size() -> i64 { 10 }
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeleteUserReq {
-    pub id: i64,
+    pub id: u64,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetUserAuthorityReq {
-    pub id: i64,
-    pub authority_id: i64,
+    pub authority_id: u64,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetUserInfoReq {
-    pub id: i64,
+    pub id: u64,
     pub nick_name: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
@@ -48,15 +47,15 @@ pub struct SetUserInfoReq {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResetPasswordReq {
-    pub id: i64,
+    pub id: u64,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetUserEnableReq {
-    pub id: i64,
+    pub id: u64,
     /// 0=禁用，1=启用
-    pub enable: i8,
+    pub enable: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -64,15 +63,15 @@ pub struct SetUserEnableReq {
 pub struct UserItem {
     /// 兼容前端 Gin-Vue-Admin 使用大写 ID 的惯例
     #[serde(rename = "ID")]
-    pub id: i64,
+    pub id: u64,
     pub uuid: String,
     pub user_name: String,
     pub nick_name: String,
     pub header_img: String,
     pub phone: String,
     pub email: String,
-    pub enable: i8,
-    pub authority_id: i64,
+    pub enable: i64,
+    pub authority_id: u64,
 }
 
 #[derive(Debug, Serialize, Default)]
@@ -154,14 +153,14 @@ pub async fn delete_user(
 /// 设置用户角色，对应 Gin-Vue-Admin 的 userApi.SetUserAuthority()
 pub async fn set_user_authority(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    Extension(claims): Extension<Claims>,
     Json(req): Json<SetUserAuthorityReq>,
 ) -> Json<ApiResponse<()>> {
     let Some(db) = state.try_get_db() else {
         return Json(ApiResponse::ok_msg("数据库未连接"));
     };
     let db = &*db;
-    match UserService::set_user_authority(db, req.id, req.authority_id).await {
+    match UserService::set_user_authority(db, claims.user_id, req.authority_id).await {
         Ok(_) => Json(ApiResponse::ok_msg("设置成功")),
         Err(e) => {
             error!("设置用户角色失败: {}", e);
@@ -252,9 +251,9 @@ pub struct AdminRegisterReq {
     pub user_name: String,
     pub password: String,
     pub nick_name: Option<String>,
-    pub authority_id: Option<i64>,
+    pub authority_id: Option<u64>,
     #[serde(default)]
-    pub authority_ids: Vec<i64>,
+    pub authority_ids: Vec<u64>,
     pub header_img: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
@@ -278,18 +277,79 @@ pub async fn admin_register(
         .unwrap_or(888);
 
     match UserService::register(db, &req.user_name, &req.password, &nick_name, authority_id).await {
-        Ok(user) => Json(ApiResponse::ok_with_data(serde_json::json!({
-            "user": {
-                "ID": user.id,
-                "uuid": user.uuid.to_string(),
-                "userName": user.username,
-                "nickName": user.nick_name,
-                "authorityId": user.authority_id,
+        Ok(user) => {
+            // 如果传入了多角色列表，则同步设置多角色关系
+            let authority_ids = if req.authority_ids.is_empty() {
+                vec![authority_id]
+            } else {
+                req.authority_ids.clone()
+            };
+            if let Err(e) = UserService::set_user_authorities(db, user.id, authority_ids).await {
+                error!("设置用户多角色失败: {}", e);
             }
-        }), "创建成功")),
+            Json(ApiResponse::ok_with_data(serde_json::json!({
+                "user": {
+                    "ID": user.id,
+                    "uuid": user.uuid.to_string(),
+                    "userName": user.username,
+                    "nickName": user.nick_name,
+                    "authorityId": user.authority_id,
+                }
+            }), "创建成功"))
+        },
         Err(e) => {
             error!("管理员创建用户失败: {}", e);
             Json(ApiResponse::err_default(7008, &format!("创建失败: {}", e)))
+        }
+    }
+}
+
+// ===== 新增接口 =====
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetUserAuthoritiesReq {
+    #[serde(alias = "id", alias = "ID")]
+    pub id: u64,
+    pub authority_ids: Vec<u64>,
+}
+
+/// POST /user/setUserAuthorities
+/// 设置用户多角色权限，对应 Gin-Vue-Admin 的 userApi.SetUserAuthorities()
+pub async fn set_user_authorities(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+    Json(req): Json<SetUserAuthoritiesReq>,
+) -> Json<ApiResponse<()>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::ok_msg("数据库未连接"));
+    };
+    let db = &*db;
+    match UserService::set_user_authorities(db, req.id, req.authority_ids).await {
+        Ok(_) => Json(ApiResponse::ok_msg("修改成功")),
+        Err(e) => {
+            error!("设置用户多角色失败: {}", e);
+            Json(ApiResponse::ok_msg(&format!("修改失败: {}", e)))
+        }
+    }
+}
+
+/// PUT /user/setSelfSetting
+/// 设置用户配置，对应 Gin-Vue-Admin 的 userApi.SetSelfSetting()
+pub async fn set_self_setting(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Json(req): Json<serde_json::Value>,
+) -> Json<ApiResponse<()>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::ok_msg("数据库未连接"));
+    };
+    let db = &*db;
+    match UserService::set_self_setting(db, claims.user_id, req).await {
+        Ok(_) => Json(ApiResponse::ok_msg("设置成功")),
+        Err(e) => {
+            error!("设置用户配置失败: {}", e);
+            Json(ApiResponse::ok_msg(&format!("设置失败: {}", e)))
         }
     }
 }

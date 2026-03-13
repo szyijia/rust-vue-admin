@@ -15,6 +15,7 @@ use sea_orm_migration::MigratorTrait;
 
 /// 初始化数据库请求，对应 Gin-Vue-Admin 的 request.InitDB
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InitDbRequest {
     /// admin 账号的初始密码
     pub admin_password: String,
@@ -43,6 +44,7 @@ pub struct InitDbRequest {
 fn default_db_type() -> String { "sqlite".to_string() }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CheckDbResponse {
     pub need_init: bool,
 }
@@ -80,10 +82,9 @@ pub async fn init_db(
     }
 
     // 3. 构建临时配置用于连接数据库（克隆当前配置并修改数据库相关字段）
-    let mut temp_config: AppConfig = (*state.config).clone();
+    let mut temp_config: AppConfig = (*state.get_config()).clone();
     let db_type = req.db_type.to_lowercase();
     temp_config.system.db_type = db_type.clone();
-    temp_config.system.disable_auto_migrate = true; // initdb 自己管理迁移
 
     match db_type.as_str() {
         "mysql" => {
@@ -188,7 +189,7 @@ pub async fn init_db(
     }
     info!("✅ 数据库迁移完成");
 
-    // 6. 创建 admin 用户（使用用户指定的密码）
+    // 6. 更新 admin 用户密码（migrate 已创建 admin 用户但密码为空，这里更新为用户指定的密码）
     let hashed_password = match hash_password(&req.admin_password) {
         Ok(h) => h,
         Err(e) => {
@@ -197,11 +198,11 @@ pub async fn init_db(
         }
     };
 
-    if let Err(e) = create_admin_user(&db, &hashed_password).await {
-        error!("创建 admin 用户失败: {}", e);
-        return ApiResponse::fail(7014, format!("创建管理员账号失败: {}", e), serde_json::Value::Null);
+    if let Err(e) = update_admin_password(&db, &hashed_password).await {
+        error!("更新 admin 密码失败: {}", e);
+        return ApiResponse::fail(7014, format!("设置管理员密码失败: {}", e), serde_json::Value::Null);
     }
-    info!("✅ admin 用户创建成功");
+    info!("✅ admin 用户密码设置成功");
 
     // 7. 将数据库连接设置到全局状态
     state.set_db(db.clone()).await;
@@ -228,34 +229,28 @@ pub async fn init_db(
     warn!("⚠️  [初始化] 请牢记 admin 密码！如需重新初始化，需先清空 config.yaml 中的数据库配置并重启服务");
 
     ApiResponse::ok(serde_json::json!({
-        "msg": "数据库初始化成功，admin 账号已创建，请使用设定的密码登录",
+        "msg": "数据库初始化成功，admin 密码已设置，请使用设定的密码登录",
         "migrations": migration_report
     }))
 }
 
-/// 创建 admin 超级管理员用户
-async fn create_admin_user(
+/// 更新 admin 用户密码（migrate 已创建 admin 用户，这里仅更新密码）
+async fn update_admin_password(
     db: &sea_orm::DatabaseConnection,
     hashed_password: &str,
 ) -> anyhow::Result<()> {
-    use sea_orm::{ActiveModelTrait, Set};
+    use sea_orm::{EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set, IntoActiveModel};
     use crate::model::system::sys_user;
-    use uuid::Uuid;
 
-    let admin = sys_user::ActiveModel {
-        uuid: Set(Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap()),
-        username: Set("admin".to_string()),
-        password: Set(hashed_password.to_string()),
-        nick_name: Set("超级管理员".to_string()),
-        header_img: Set(String::new()),
-        phone: Set(String::new()),
-        email: Set(String::new()),
-        enable: Set(1),
-        authority_id: Set(888i64),
-        ..Default::default()
-    };
+    let admin = sys_user::Entity::find()
+        .filter(sys_user::Column::Username.eq("admin"))
+        .one(db)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("admin 用户不存在，请检查迁移是否执行成功"))?;
 
-    admin.insert(db).await?;
+    let mut admin_active = admin.into_active_model();
+    admin_active.password = Set(hashed_password.to_string());
+    admin_active.update(db).await?;
     Ok(())
 }
 
@@ -268,18 +263,14 @@ async fn write_config_to_file(config: &AppConfig) -> anyhow::Result<()> {
     let mut yaml_value: serde_yaml::Value = serde_yaml::from_str(&content)?;
 
     // 更新 system 节
-    // 初始化完成后：
-    //   - disable_auto_migrate = false → 下次启动自动执行增量迁移（安全，只建表不删表）
     if let Some(system) = yaml_value.get_mut("system") {
         if let Some(obj) = system.as_mapping_mut() {
             obj.insert(
                 serde_yaml::Value::String("db_type".to_string()),
                 serde_yaml::Value::String(config.system.db_type.clone()),
             );
-            obj.insert(
-                serde_yaml::Value::String("disable_auto_migrate".to_string()),
-                serde_yaml::Value::Bool(false),
-            );
+            // 删除旧的 disable_auto_migrate 字段（如果存在）
+            obj.remove(&serde_yaml::Value::String("disable_auto_migrate".to_string()));
         }
     }
 

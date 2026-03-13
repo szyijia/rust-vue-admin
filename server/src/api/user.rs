@@ -1,11 +1,11 @@
 use axum::extract::{Extension, State};
-use sea_orm::{ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
 use crate::{
     global::{ApiResponse, AppState},
-    model::system::sys_jwt_blacklist,
+    model::system::{sys_authority_menu, sys_jwt_blacklist, sys_menu},
     service::{system::sys_authority, UserService},
     utils::Claims,
 };
@@ -21,7 +21,7 @@ pub struct UserInfoResponse {
     pub header_img: String,
     pub phone: String,
     pub email: String,
-    pub authority_id: i64,
+    pub authority_id: u64,
 }
 
 /// 修改个人信息请求
@@ -38,7 +38,7 @@ pub struct UpdateSelfInfoReq {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangePasswordReq {
-    pub old_password: String,
+    pub password: String,
     pub new_password: String,
 }
 
@@ -58,27 +58,84 @@ pub async fn get_user_info(
 
     match UserService::find_by_id(db, claims.user_id).await {
         Ok(user) => {
-            // 查询角色信息
+            // 查询当前角色信息
             let authority = sys_authority::get_authority_by_id(db, user.authority_id)
                 .await
                 .ok()
                 .flatten();
 
+            // UserAuthorityDefaultRouter: 检查默认路由是否在该角色的菜单中
+            let default_router = if let Some(ref auth) = authority {
+                let menu_ids: Vec<u64> = sys_authority_menu::Entity::find()
+                    .filter(sys_authority_menu::Column::SysAuthorityAuthorityId.eq(user.authority_id))
+                    .all(db)
+                    .await
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|m| m.sys_base_menu_id)
+                    .collect();
+                // 检查 default_router 对应的菜单是否在角色的菜单列表中
+                let found = if !menu_ids.is_empty() {
+                    sys_menu::Entity::find()
+                        .filter(sys_menu::Column::Name.eq(auth.default_router.as_str()))
+                        .filter(sys_menu::Column::Id.is_in(menu_ids))
+                        .one(db)
+                        .await
+                        .unwrap_or(None)
+                } else {
+                    None
+                };
+                if found.is_none() {
+                    "404".to_string()
+                } else {
+                    auth.default_router.clone()
+                }
+            } else {
+                "dashboard".to_string()
+            };
+
+            // 查询多角色列表（authorities）
+            let authority_ids = UserService::get_user_authorities(db, user.id)
+                .await
+                .unwrap_or_default();
+            let mut authorities = Vec::new();
+            for aid in &authority_ids {
+                if let Ok(Some(a)) = sys_authority::get_authority_by_id(db, *aid).await {
+                    authorities.push(serde_json::json!({
+                        "authorityId": a.authority_id,
+                        "authorityName": a.authority_name,
+                        "parentId": a.parent_id,
+                        "defaultRouter": a.default_router,
+                    }));
+                }
+            }
+
+            // 解析 originSetting（JSON 字符串 -> JSON 对象）
+            let origin_setting: serde_json::Value = user.origin_setting
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or(serde_json::Value::Null);
+
             ApiResponse::ok(serde_json::json!({
                 "userInfo": {
                     "ID": user.id,
+                    "CreatedAt": user.created_at,
+                    "UpdatedAt": user.updated_at,
                     "uuid": user.uuid.to_string(),
                     "userName": user.username,
                     "nickName": user.nick_name,
                     "headerImg": user.header_img,
                     "phone": user.phone,
                     "email": user.email,
+                    "enable": user.enable,
                     "authorityId": user.authority_id,
                     "authority": {
                         "authorityId": authority.as_ref().map(|a| a.authority_id).unwrap_or(user.authority_id),
                         "authorityName": authority.as_ref().map(|a| a.authority_name.as_str()).unwrap_or(""),
-                        "defaultRouter": authority.as_ref().map(|a| a.default_router.as_str()).unwrap_or("dashboard"),
-                    }
+                        "defaultRouter": default_router,
+                    },
+                    "authorities": authorities,
+                    "originSetting": origin_setting,
                 }
             }))
         }
@@ -140,7 +197,7 @@ pub async fn change_password(
         return ApiResponse::fail(7002, "新密码至少6位", serde_json::Value::Null);
     }
 
-    match UserService::change_password(db, claims.user_id, &req.old_password, &req.new_password).await {
+    match UserService::change_password(db, claims.user_id, &req.password, &req.new_password).await {
         Ok(_) => ApiResponse::ok(serde_json::json!({"msg": "密码修改成功"})),
         Err(e) => {
             error!("修改密码失败: {}", e);

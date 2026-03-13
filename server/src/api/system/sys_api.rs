@@ -19,11 +19,11 @@ pub struct CreateApiReq {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DeleteApiReq { pub id: i32 }
+pub struct DeleteApiReq { pub id: u64 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DeleteApisByIdsReq { pub ids: Vec<i32> }
+pub struct DeleteApisByIdsReq { pub ids: Vec<u64> }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -213,5 +213,150 @@ pub async fn get_api_by_id(
         Ok(Some(api)) => Json(ApiResponse::ok_with_data(serde_json::json!({ "api": api }), "获取成功")),
         Ok(None) => Json(ApiResponse::err_default(7001, "API 不存在")),
         Err(e) => { error!("获取 API 失败: {}", e); Json(ApiResponse::err_default(7001, &format!("获取失败: {}", e))) }
+    }
+}
+
+// ===== 新增接口 =====
+
+use crate::service::system::sys_casbin;
+
+/// GET /api/syncApi
+/// 同步 API，对比已注册路由和数据库中的 API
+pub async fn sync_api(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+) -> Json<ApiResponse<serde_json::Value>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::fail(7005, "数据库未连接", serde_json::Value::Null));
+    };
+    let db = &*db;
+    match sys_api::sync_api(db).await {
+        Ok(result) => Json(ApiResponse::ok_with_data(serde_json::to_value(result).unwrap_or_default(), "获取成功")),
+        Err(e) => { error!("同步 API 失败: {}", e); Json(ApiResponse::fail(7001, format!("同步失败: {}", e), serde_json::Value::Null)) }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IgnoreApiReq {
+    pub path: String,
+    pub method: String,
+    #[serde(default)]
+    pub flag: bool,
+}
+
+/// POST /api/ignoreApi
+/// 忽略/取消忽略 API
+pub async fn ignore_api(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+    Json(req): Json<IgnoreApiReq>,
+) -> Json<ApiResponse<()>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::ok_msg("数据库未连接"));
+    };
+    let db = &*db;
+    match sys_api::ignore_api(db, req.path, req.method, req.flag).await {
+        Ok(_) => Json(ApiResponse::ok_msg("操作成功")),
+        Err(e) => { error!("忽略 API 失败: {}", e); Json(ApiResponse::ok_msg(&format!("操作失败: {}", e))) }
+    }
+}
+
+/// POST /api/enterSyncApi
+/// 确认同步 API
+pub async fn enter_sync_api(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+    Json(req): Json<sys_api::SyncApisReq>,
+) -> Json<ApiResponse<()>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::ok_msg("数据库未连接"));
+    };
+    let db = &*db;
+    match sys_api::enter_sync_api(db, req).await {
+        Ok(_) => Json(ApiResponse::ok_msg("同步成功")),
+        Err(e) => { error!("确认同步 API 失败: {}", e); Json(ApiResponse::ok_msg(&format!("同步失败: {}", e))) }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetApiRolesReq {
+    pub path: String,
+    pub method: String,
+}
+
+/// GET /api/getApiRoles
+/// 获取拥有指定 API 权限的角色 ID 列表
+pub async fn get_api_roles(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+    axum::extract::Query(req): axum::extract::Query<GetApiRolesReq>,
+) -> Json<ApiResponse<Vec<u64>>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::err_default(7005, "数据库未连接"));
+    };
+    let db = &*db;
+    if req.path.is_empty() || req.method.is_empty() {
+        return Json(ApiResponse::err_default(7001, "API路径和请求方法不能为空"));
+    }
+    match sys_casbin::get_authorities_by_api(db, &req.path, &req.method).await {
+        Ok(ids) => Json(ApiResponse::ok_with_data(ids, "获取成功")),
+        Err(e) => { error!("获取失败: {}", e); Json(ApiResponse::err_default(7001, &format!("获取失败: {}", e))) }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetApiRolesReq {
+    pub path: String,
+    pub method: String,
+    #[serde(default)]
+    pub authority_ids: Vec<u64>,
+}
+
+/// POST /api/setApiRoles
+/// 全量覆盖某 API 关联的角色列表
+pub async fn set_api_roles(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+    Json(req): Json<SetApiRolesReq>,
+) -> Json<ApiResponse<()>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::ok_msg("数据库未连接"));
+    };
+    let db = &*db;
+    if req.path.is_empty() || req.method.is_empty() {
+        return Json(ApiResponse::ok_msg("API路径和请求方法不能为空"));
+    }
+    match sys_casbin::set_api_authorities(db, &req.path, &req.method, req.authority_ids).await {
+        Ok(_) => {
+            // 刷新 Casbin 缓存
+            if let Some(enforcer) = state.try_get_enforcer() {
+                let _ = sys_casbin::fresh_casbin_cache(&enforcer, db).await;
+            }
+            Json(ApiResponse::ok_msg("设置成功"))
+        }
+        Err(e) => { error!("设置失败: {}", e); Json(ApiResponse::ok_msg(&format!("设置失败: {}", e))) }
+    }
+}
+
+/// GET /api/freshCasbin
+/// 刷新 Casbin 缓存
+pub async fn fresh_casbin(
+    State(state): State<AppState>,
+    Extension(_claims): Extension<Claims>,
+) -> Json<ApiResponse<()>> {
+    let Some(db) = state.try_get_db() else {
+        return Json(ApiResponse::ok_msg("数据库未连接"));
+    };
+    let db = &*db;
+    if let Some(enforcer) = state.try_get_enforcer() {
+        match sys_casbin::fresh_casbin_cache(&enforcer, db).await {
+            Ok(_) => Json(ApiResponse::ok_msg("刷新成功")),
+            Err(e) => { error!("刷新失败: {}", e); Json(ApiResponse::ok_msg(&format!("刷新失败: {}", e))) }
+        }
+    } else {
+        Json(ApiResponse::ok_msg("Casbin 未初始化"))
     }
 }
