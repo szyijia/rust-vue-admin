@@ -38,6 +38,10 @@ serde_yaml = "0.9"
 
 # ===== 配置管理 =====
 config = { version = "0.14", features = ["yaml"] }
+notify = "7"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+notify = { version = "7", features = ["macos_fsevent"] }
 
 # ===== 日志 =====
 tracing = "0.1"
@@ -108,6 +112,10 @@ tokio-util = { version = "0.7", features = ["io"] }
 
 # ===== HTTP 客户端 =====
 reqwest = { version = "0.12", features = ["json", "multipart"] }
+
+# ===== 系统信息 =====
+sysinfo = "0.29"
+num_cpus = "1"
 
 # ===== 其他 =====
 dotenv = "0.15"

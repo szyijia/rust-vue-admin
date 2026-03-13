@@ -48,7 +48,7 @@ async fn main() {
         match initialize::init_db(&app_config).await {
             Ok(db) => {
                 // 自动执行数据库迁移（仅增量模式，不删表）
-                if !app_config.system.disable_auto_migrate {
+                {
                     use sea_orm_migration::MigratorTrait;
 
                     // 迁移前：输出当前迁移状态报告
@@ -113,10 +113,13 @@ async fn main() {
         }
     }
 
-    // 6. 初始化路由（对应 Gin-Vue-Admin: initialize.Routers()）
+    // 6. 启动配置文件热重载监听（对应 Gin-Vue-Admin: viper.WatchConfig()）
+    initialize::start_config_watcher(state.clone());
+
+    // 7. 初始化路由（对应 Gin-Vue-Admin: initialize.Routers()）
     let router = router::init_router(state);
 
-    // 7. 启动服务器（对应 Gin-Vue-Admin: core.RunServer()）
+    // 8. 启动服务器（对应 Gin-Vue-Admin: core.RunServer()）
     if let Err(e) = core::run_server(router, &app_config.system).await {
         error!("服务器运行错误: {}", e);
         std::process::exit(1);

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// 日志配置，对应 config.yaml log 节（参考 Gin-Vue-Admin zap 配置）
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct LogConfig {
     /// 日志级别: trace/debug/info/warn/error
     pub level: String,

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// 验证码配置，对应 config.yaml captcha 节
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct CaptchaConfig {
     /// 验证码长度
     pub key_long: u32,

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// 数据库通用配置
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct MysqlConfig {
     pub path: String,
     pub port: String,
@@ -41,7 +41,7 @@ impl MysqlConfig {
 }
 
 /// PostgreSQL 配置
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct PgsqlConfig {
     pub path: String,
     pub port: String,
@@ -65,7 +65,7 @@ impl PgsqlConfig {
 }
 
 /// SQLite 配置
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct SqliteConfig {
     pub path: String,
     pub max_idle_conns: u32,

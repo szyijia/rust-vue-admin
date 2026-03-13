@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// Redis 配置，对应 config.yaml redis 节
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct RedisConfig {
     /// 是否使用集群模式
     pub use_cluster: bool,

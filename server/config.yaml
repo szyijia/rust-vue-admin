@@ -1,0 +1,122 @@
+jwt:
+  signing_key: rustVueAdmin
+  expires_time: 7d
+  buffer_time: 1d
+  issuer: rust-vue-admin
+log:
+  level: info
+  format: console
+  prefix: '[rust-vue-admin]'
+  director: log
+  show_line: true
+  log_in_console: true
+  retention_day: 7
+redis:
+  use_cluster: false
+  addr: ''
+  password: ''
+  db: 0
+  cluster_addrs:
+  - 127.0.0.1:7000
+  - 127.0.0.1:7001
+  - 127.0.0.1:7002
+email:
+  to: xxx@qq.com
+  port: 465
+  from: xxx@163.com
+  host: smtp.163.com
+  is_ssl: true
+  secret: xxx
+  nickname: rust-vue-admin
+system:
+  env: local
+  addr: 8888
+  db_type: mysql
+  oss_type: local
+  use_redis: true
+  use_multipoint: false
+  ip_limit_count: 15000
+  ip_limit_time: 3600
+  router_prefix: ''
+  use_strict_auth: false
+captcha:
+  key_long: 4
+  img_width: 240
+  img_height: 80
+  open_captcha: 0
+  open_captcha_timeout: 3600
+mysql:
+  path: ''
+  port: ''
+  config: ''
+  db_name: ''
+  username: ''
+  password: ''
+  max_idle_conns: 10
+  max_open_conns: 100
+  log_mode: error
+pgsql:
+  path: ''
+  port: '5432'
+  config: ''
+  db_name: ''
+  username: ''
+  password: ''
+  max_idle_conns: 10
+  max_open_conns: 100
+  log_mode: error
+sqlite:
+  path: ''
+  max_idle_conns: 5
+  max_open_conns: 10
+  log_mode: error
+local:
+  path: uploads/file
+  store_path: uploads/file
+minio:
+  endpoint: localhost:9000
+  access_key_id: minioadmin
+  access_key_secret: minioadmin
+  bucket_name: rust-vue-admin
+  use_ssl: false
+  base_path: ''
+  bucket_url: http://localhost:9000/rust-vue-admin
+aliyun_oss:
+  endpoint: yourEndpoint
+  access_key_id: yourAccessKeyId
+  access_key_secret: yourAccessKeySecret
+  bucket_name: yourBucketName
+  bucket_url: yourBucketUrl
+  base_path: yourBasePath
+tencent_cos:
+  bucket: xxxxx-10005608
+  region: ap-shanghai
+  secret_id: your-secret-id
+  secret_key: your-secret-key
+  base_url: https://rust.vue.admin
+  path_prefix: rust-vue-admin
+aws_s3:
+  bucket: rust-vue-admin
+  region: ap-shanghai
+  endpoint: ''
+  s3_force_path_style: false
+  disable_ssl: false
+  secret_id: your-secret-id
+  secret_key: your-secret-key
+  base_url: https://rust.vue.admin
+  path_prefix: rust-vue-admin
+excel:
+  dir: ./resource/excel/
+cors:
+  mode: strict-whitelist
+  whitelist:
+  - allow_origin: http://localhost:8080
+    allow_headers: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id
+    allow_methods: POST,GET,PUT,DELETE,OPTIONS
+    expose_headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type
+    allow_credentials: true
+  - allow_origin: http://localhost:3000
+    allow_headers: Content-Type,Authorization,Token
+    allow_methods: GET,POST,PUT,DELETE
+    expose_headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type
+    allow_credentials: true

@@ -21,7 +21,6 @@
 # =====================
 server/target/
 server/log/
-server/config.yaml
 
 # =====================
 # Vue 前端 (web/)
@@ -31,6 +30,8 @@ web/dist/
 web/package-lock.json
 web/yarn.lock
 web/bun.lockb
+web/.vite/
+web/.docker-compose/
 
 # =====================
 # 通用

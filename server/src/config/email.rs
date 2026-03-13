@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// 邮件配置，对应 config.yaml email 节
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct EmailConfig {
     pub to: String,
     pub port: u16,
