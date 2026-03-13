@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_users")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
+    #[serde(rename = "ID")]
+    pub id: u64,
     /// 用户UUID（唯一标识）
     pub uuid: Uuid,
     /// 用户名（登录名）
@@ -24,14 +25,20 @@ pub struct Model {
     /// 邮箱
     pub email: String,
     /// 是否启用：0=禁用，1=启用
-    pub enable: i8,
+    pub enable: i64,
     /// 角色ID
-    pub authority_id: i64,
+    pub authority_id: u64,
+    /// 用户配置（JSON格式）
+    #[sea_orm(column_type = "Text", nullable)]
+    pub origin_setting: Option<String>,
     /// 创建时间
+    #[serde(rename = "CreatedAt")]
     pub created_at: Option<NaiveDateTime>,
     /// 更新时间
+    #[serde(rename = "UpdatedAt")]
     pub updated_at: Option<NaiveDateTime>,
     /// 删除时间（软删除）
+    #[serde(skip_serializing)]
     pub deleted_at: Option<NaiveDateTime>,
 }
 

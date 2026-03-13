@@ -2,26 +2,29 @@ use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-/// JWT 黑名单表，对应 Gin-Vue-Admin 的 JwtBlacklist
-/// 用于存储已注销的 JWT Token，防止 Token 被重复使用
+/// 字典表，对应 Gin-Vue-Admin 的 SysDictionary
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "jwt_blacklists")]
+#[sea_orm(table_name = "sys_dictionaries")]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[sea_orm(primary_key)]
     #[serde(rename = "ID")]
     pub id: u64,
-    /// JWT Token 字符串
-    #[sea_orm(column_type = "Text")]
-    pub jwt: String,
-    /// 创建时间
     #[serde(rename = "CreatedAt")]
     pub created_at: Option<NaiveDateTime>,
-    /// 更新时间
     #[serde(rename = "UpdatedAt")]
     pub updated_at: Option<NaiveDateTime>,
-    /// 删除时间（软删除）
     #[serde(skip_serializing)]
     pub deleted_at: Option<NaiveDateTime>,
+    /// 字典名（中）
+    pub name: String,
+    /// 字典名（英）
+    #[sea_orm(column_name = "type")]
+    pub r#type: String,
+    /// 状态
+    pub status: bool,
+    /// 描述
+    pub desc: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

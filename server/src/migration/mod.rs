@@ -1,5 +1,6 @@
 mod m20240101_000001_create_tables;
 mod m20240101_000002_seed_data;
+mod m20240101_000003_seed_api_casbin;
 
 use sea_orm_migration::prelude::*;
 
@@ -11,6 +12,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20240101_000001_create_tables::Migration),
             Box::new(m20240101_000002_seed_data::Migration),
+            Box::new(m20240101_000003_seed_api_casbin::Migration),
         ]
     }
 }

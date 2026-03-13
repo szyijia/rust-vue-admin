@@ -1,10 +1,21 @@
 pub mod casbin_rule;
 pub mod sys_api;
+pub mod sys_authority_btn;
 pub mod sys_authority_menu;
+pub mod sys_base_menu_btn;
+pub mod sys_base_menu_parameter;
+pub mod sys_data_authority_id;
+pub mod sys_dictionary;
+pub mod sys_dictionary_detail;
+pub mod sys_error;
+pub mod sys_ignore_api;
 pub mod sys_jwt_blacklist;
 pub mod sys_menu;
+pub mod sys_operation_record;
+pub mod sys_params;
 pub mod sys_role;
 pub mod sys_user;
+pub mod sys_user_authority;
 
 pub use sys_jwt_blacklist::Model as JwtBlacklist;
 pub use sys_role::Model as SysRole;

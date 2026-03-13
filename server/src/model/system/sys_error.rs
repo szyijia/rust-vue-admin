@@ -2,26 +2,34 @@ use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-/// JWT 黑名单表，对应 Gin-Vue-Admin 的 JwtBlacklist
-/// 用于存储已注销的 JWT Token，防止 Token 被重复使用
+/// 错误日志表，对应 Gin-Vue-Admin 的 SysError
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "jwt_blacklists")]
+#[sea_orm(table_name = "sys_error")]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[sea_orm(primary_key)]
     #[serde(rename = "ID")]
     pub id: u64,
-    /// JWT Token 字符串
-    #[sea_orm(column_type = "Text")]
-    pub jwt: String,
-    /// 创建时间
     #[serde(rename = "CreatedAt")]
     pub created_at: Option<NaiveDateTime>,
-    /// 更新时间
     #[serde(rename = "UpdatedAt")]
     pub updated_at: Option<NaiveDateTime>,
-    /// 删除时间（软删除）
     #[serde(skip_serializing)]
     pub deleted_at: Option<NaiveDateTime>,
+    /// 错误来源
+    #[sea_orm(column_type = "Text", nullable)]
+    pub form: Option<String>,
+    /// 错误内容
+    #[sea_orm(column_type = "Text", nullable)]
+    pub info: Option<String>,
+    /// 日志等级
+    pub level: Option<String>,
+    /// 解决方案
+    #[sea_orm(column_type = "Text", nullable)]
+    pub solution: Option<String>,
+    /// 处理状态：未处理/处理中/处理完成
+    #[sea_orm(column_type = "String(StringLen::N(20))")]
+    pub status: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

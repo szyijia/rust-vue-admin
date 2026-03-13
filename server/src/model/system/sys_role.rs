@@ -7,18 +7,21 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_authorities")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub authority_id: i64,
+    pub authority_id: u64,
     /// 角色名称
     pub authority_name: String,
     /// 父角色ID（0 表示顶级）
-    pub parent_id: i64,
+    pub parent_id: u64,
     /// 默认路由（登录后跳转）
     pub default_router: String,
     /// 创建时间
+    #[serde(rename = "CreatedAt")]
     pub created_at: Option<NaiveDateTime>,
     /// 更新时间
+    #[serde(rename = "UpdatedAt")]
     pub updated_at: Option<NaiveDateTime>,
     /// 删除时间（软删除）
+    #[serde(skip_serializing)]
     pub deleted_at: Option<NaiveDateTime>,
 }
 
