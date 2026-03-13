@@ -25,7 +25,8 @@ pub async fn jwt_auth(
     })?;
 
     // 解析并验证 token
-    let claims = jwt::parse_token(token, &state.config.jwt).map_err(|e| {
+    let config = state.get_config();
+    let claims = jwt::parse_token(token, &config.jwt).map_err(|e| {
         let resp: ApiResponse<()> = ApiResponse::unauthorized(&format!("Token 无效: {}", e));
         resp.into_http_response()
     })?;

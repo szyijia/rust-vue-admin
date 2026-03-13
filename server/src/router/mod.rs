@@ -8,7 +8,6 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use tower_http::trace::TraceLayer;
 use tracing::warn;
 
 use crate::{api, global::AppState, middleware as mw};
@@ -28,17 +27,19 @@ pub async fn handle_json_rejection(rejection: JsonRejection) -> Response {
 
 /// 注册所有路由，对应 Gin-Vue-Admin 的 initialize.Routers()
 pub fn init_router(state: AppState) -> Router {
-    let cors_layer = mw::build_cors_layer(&state.config.cors);
+    let cors_layer = mw::build_cors_layer(&state.get_config().cors);
 
     // 公开路由（无需认证）
     let public_routes = Router::new()
         .route("/health", get(health::health_check))
-        .route("/base/captcha", get(api::base::captcha))
+.route("/base/captcha", post(api::base::captcha))
         .route("/base/login", post(api::base::login))
         .route("/base/register", post(api::base::register))
         // 数据库初始化接口（对应 Gin-Vue-Admin 的 /init/）
-        .route("/init/checkdb", get(api::init::check_db))
-        .route("/init/initdb", post(api::init::init_db));
+        .route("/init/checkdb", post(api::init::check_db))
+        .route("/init/initdb", post(api::init::init_db))
+        // 错误日志（无需认证，前端 error-handler 自动调用）
+        .route("/sysError/createSysError", post(api::system::sys_error::create_sys_error));
 
     // 私有路由（需要 JWT 认证 + Casbin 权限）
     let private_routes = Router::new()
@@ -77,6 +78,14 @@ pub fn init_router(state: AppState) -> Router {
             "/user/admin_register",
             post(api::system::sys_user::admin_register),
         )
+        .route(
+            "/user/setUserAuthorities",
+            post(api::system::sys_user::set_user_authorities),
+        )
+        .route(
+            "/user/setSelfSetting",
+            put(api::system::sys_user::set_self_setting),
+        )
         // 角色管理
         .route(
             "/authority/createAuthority",
@@ -93,6 +102,22 @@ pub fn init_router(state: AppState) -> Router {
         .route(
             "/authority/getAuthorityList",
             post(api::system::sys_authority::get_authority_list),
+        )
+        .route(
+            "/authority/copyAuthority",
+            post(api::system::sys_authority::copy_authority),
+        )
+        .route(
+            "/authority/setDataAuthority",
+            post(api::system::sys_authority::set_data_authority),
+        )
+        .route(
+            "/authority/setRoleUsers",
+            post(api::system::sys_authority::set_role_users),
+        )
+        .route(
+            "/authority/getUsersByAuthority",
+            get(api::system::sys_authority::get_users_by_authority),
         )
         // Casbin 权限管理
         .route(
@@ -137,6 +162,14 @@ pub fn init_router(state: AppState) -> Router {
             "/menu/getMenuAuthority",
             post(api::system::sys_menu::get_menu_authority),
         )
+        .route(
+            "/menu/getMenuRoles",
+            get(api::system::sys_menu::get_menu_roles),
+        )
+        .route(
+            "/menu/setMenuRoles",
+            post(api::system::sys_menu::set_menu_roles),
+        )
         // API 管理
         .route("/api/createApi", post(api::system::sys_api::create_api))
         .route("/api/deleteApi", post(api::system::sys_api::delete_api))
@@ -149,6 +182,159 @@ pub fn init_router(state: AppState) -> Router {
         .route("/api/getAllApis", post(api::system::sys_api::get_all_apis))
         .route("/api/getApiById", post(api::system::sys_api::get_api_by_id))
         .route("/api/getApiGroups", get(api::system::sys_api::get_api_groups))
+        .route("/api/syncApi", get(api::system::sys_api::sync_api))
+        .route("/api/ignoreApi", post(api::system::sys_api::ignore_api))
+        .route("/api/enterSyncApi", post(api::system::sys_api::enter_sync_api))
+        .route("/api/getApiRoles", get(api::system::sys_api::get_api_roles))
+        .route("/api/setApiRoles", post(api::system::sys_api::set_api_roles))
+        .route("/api/freshCasbin", get(api::system::sys_api::fresh_casbin))
+        // 字典管理
+        .route(
+            "/sysDictionary/createSysDictionary",
+            post(api::system::sys_dictionary::create_sys_dictionary),
+        )
+        .route(
+            "/sysDictionary/deleteSysDictionary",
+            delete(api::system::sys_dictionary::delete_sys_dictionary),
+        )
+        .route(
+            "/sysDictionary/updateSysDictionary",
+            put(api::system::sys_dictionary::update_sys_dictionary),
+        )
+        .route(
+            "/sysDictionary/findSysDictionary",
+            get(api::system::sys_dictionary::find_sys_dictionary),
+        )
+        .route(
+            "/sysDictionary/getSysDictionaryList",
+            get(api::system::sys_dictionary::get_sys_dictionary_list),
+        )
+        .route(
+            "/sysDictionary/exportSysDictionary",
+            get(api::system::sys_dictionary::export_sys_dictionary),
+        )
+        .route(
+            "/sysDictionary/importSysDictionary",
+            post(api::system::sys_dictionary::import_sys_dictionary),
+        )
+        // 字典详情
+        .route(
+            "/sysDictionaryDetail/createSysDictionaryDetail",
+            post(api::system::sys_dictionary_detail::create_sys_dictionary_detail),
+        )
+        .route(
+            "/sysDictionaryDetail/deleteSysDictionaryDetail",
+            delete(api::system::sys_dictionary_detail::delete_sys_dictionary_detail),
+        )
+        .route(
+            "/sysDictionaryDetail/updateSysDictionaryDetail",
+            put(api::system::sys_dictionary_detail::update_sys_dictionary_detail),
+        )
+        .route(
+            "/sysDictionaryDetail/findSysDictionaryDetail",
+            get(api::system::sys_dictionary_detail::find_sys_dictionary_detail),
+        )
+        .route(
+            "/sysDictionaryDetail/getSysDictionaryDetailList",
+            get(api::system::sys_dictionary_detail::get_sys_dictionary_detail_list),
+        )
+        .route(
+            "/sysDictionaryDetail/getDictionaryTreeList",
+            get(api::system::sys_dictionary_detail::get_dictionary_tree_list),
+        )
+        .route(
+            "/sysDictionaryDetail/getDictionaryTreeListByType",
+            get(api::system::sys_dictionary_detail::get_dictionary_tree_list_by_type),
+        )
+        .route(
+            "/sysDictionaryDetail/getDictionaryDetailsByParent",
+            get(api::system::sys_dictionary_detail::get_dictionary_details_by_parent),
+        )
+        .route(
+            "/sysDictionaryDetail/getDictionaryPath",
+            get(api::system::sys_dictionary_detail::get_dictionary_path),
+        )
+        // 系统配置
+        .route(
+            "/system/getSystemConfig",
+            post(api::system::sys_system::get_system_config),
+        )
+        .route(
+            "/system/setSystemConfig",
+            post(api::system::sys_system::set_system_config),
+        )
+        .route(
+            "/system/getServerInfo",
+            post(api::system::sys_system::get_server_info),
+        )
+        .route(
+            "/system/reloadSystem",
+            post(api::system::sys_system::reload_system),
+        )
+        // 邮件
+        .route(
+            "/email/emailTest",
+            post(api::system::sys_email::email_test),
+        )
+        // 操作记录
+        .route(
+            "/sysOperationRecord/getSysOperationRecordList",
+            get(api::system::sys_operation_record::get_sys_operation_record_list),
+        )
+        .route(
+            "/sysOperationRecord/deleteSysOperationRecord",
+            delete(api::system::sys_operation_record::delete_sys_operation_record),
+        )
+        .route(
+            "/sysOperationRecord/deleteSysOperationRecordByIds",
+            delete(api::system::sys_operation_record::delete_sys_operation_record_by_ids),
+        )
+        .route(
+            "/sysOperationRecord/findSysOperationRecord",
+            get(api::system::sys_operation_record::find_sys_operation_record),
+        )
+        // 参数管理
+        .route(
+            "/sysParams/createSysParams",
+            post(api::system::sys_params::create_sys_params),
+        )
+        .route(
+            "/sysParams/deleteSysParams",
+            delete(api::system::sys_params::delete_sys_params),
+        )
+        .route(
+            "/sysParams/deleteSysParamsByIds",
+            delete(api::system::sys_params::delete_sys_params_by_ids),
+        )
+        .route(
+            "/sysParams/updateSysParams",
+            put(api::system::sys_params::update_sys_params),
+        )
+        .route(
+            "/sysParams/findSysParams",
+            get(api::system::sys_params::find_sys_params),
+        )
+        .route(
+            "/sysParams/getSysParamsList",
+            get(api::system::sys_params::get_sys_params_list),
+        )
+        .route(
+            "/sysParams/getSysParam",
+            get(api::system::sys_params::get_sys_params_by_key),
+        )
+        // 按钮权限
+        .route(
+            "/authorityBtn/getAuthorityBtn",
+            post(api::system::sys_authority_btn::get_authority_btn),
+        )
+        .route(
+            "/authorityBtn/setAuthorityBtn",
+            post(api::system::sys_authority_btn::set_authority_btn),
+        )
+        .route(
+            "/authorityBtn/canRemoveAuthorityBtn",
+            post(api::system::sys_authority_btn::can_remove_authority_btn),
+        )
         // 先做 JWT 认证，再做 Casbin 鉴权
         .layer(middleware::from_fn_with_state(
             state.clone(),
@@ -163,7 +349,7 @@ pub fn init_router(state: AppState) -> Router {
             state.clone(),
             mw::ip_rate_limit,
         ))
-        .layer(TraceLayer::new_for_http())
+        .layer(middleware::from_fn(mw::request_log))
         .layer(cors_layer)
         .with_state(state)
 }

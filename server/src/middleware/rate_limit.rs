@@ -18,8 +18,11 @@ pub async fn ip_rate_limit(
     req: Request,
     next: Next,
 ) -> Result<Response, axum::response::Response> {
+    // 获取当前配置快照（支持热重载）
+    let config = state.get_config();
+
     // 未启用 Redis 时跳过限流
-    if !state.config.system.use_redis {
+    if !config.system.use_redis {
         return Ok(next.run(req).await);
     }
 
@@ -29,8 +32,8 @@ pub async fn ip_rate_limit(
     };
 
     let ip = addr.ip().to_string();
-    let limit_count = state.config.system.ip_limit_count;
-    let limit_time = state.config.system.ip_limit_time;
+    let limit_count = config.system.ip_limit_count;
+    let limit_time = config.system.ip_limit_time;
 
     // 执行限流检查
     match check_ip_limit(&ip, limit_count, limit_time, redis_conn.as_ref().clone()).await {

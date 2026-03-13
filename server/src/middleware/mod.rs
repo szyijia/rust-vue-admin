@@ -5,8 +5,10 @@ pub mod auth;
 pub mod casbin;
 pub mod cors;
 pub mod rate_limit;
+pub mod request_log;
 
 pub use auth::jwt_auth;
 pub use casbin::casbin_auth;
 pub use cors::build_cors_layer;
 pub use rate_limit::ip_rate_limit;
+pub use request_log::request_log;

@@ -36,11 +36,14 @@ pub struct ComponentStatus {
 ///
 /// 返回服务运行状态及各组件连接情况，无需认证
 pub async fn health_check(State(state): State<AppState>) -> ApiResponse<HealthData> {
+    // 获取当前配置快照（支持热重载）
+    let config = state.get_config();
+
     // 检查数据库状态
-    let db_status = check_db_status(&state).await;
+    let db_status = check_db_status(&state, &config).await;
 
     // 检查 Redis 状态
-    let redis_status = check_redis_status(&state).await;
+    let redis_status = check_redis_status(&state, &config).await;
 
     // 整体状态：所有已启用的组件都正常才算 ok
     let overall_ok = (!db_status.enabled || db_status.connected)
@@ -50,14 +53,14 @@ pub async fn health_check(State(state): State<AppState>) -> ApiResponse<HealthDa
         status: if overall_ok { "ok" } else { "degraded" }.to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
         timestamp: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-        env: state.config.system.env.clone(),
+        env: config.system.env.clone(),
         db: db_status,
         redis: redis_status,
     })
 }
 
 /// 检查数据库连接状态
-async fn check_db_status(state: &AppState) -> ComponentStatus {
+async fn check_db_status(state: &AppState, config: &crate::config::AppConfig) -> ComponentStatus {
     match state.try_get_db() {
         None => ComponentStatus {
             enabled: false,
@@ -68,7 +71,7 @@ async fn check_db_status(state: &AppState) -> ComponentStatus {
             Ok(_) => ComponentStatus {
                 enabled: true,
                 connected: true,
-                message: format!("已连接 ({})", state.config.system.db_type),
+                message: format!("已连接 ({})", config.system.db_type),
             },
             Err(e) => ComponentStatus {
                 enabled: true,
@@ -80,8 +83,8 @@ async fn check_db_status(state: &AppState) -> ComponentStatus {
 }
 
 /// 检查 Redis 连接状态
-async fn check_redis_status(state: &AppState) -> ComponentStatus {
-    if !state.config.system.use_redis {
+async fn check_redis_status(state: &AppState, config: &crate::config::AppConfig) -> ComponentStatus {
+    if !config.system.use_redis {
         return ComponentStatus {
             enabled: false,
             connected: false,
@@ -104,7 +107,7 @@ async fn check_redis_status(state: &AppState) -> ComponentStatus {
                 Ok(_) => ComponentStatus {
                     enabled: true,
                     connected: true,
-                    message: format!("已连接 ({})", state.config.redis.addr),
+                    message: format!("已连接 ({})", config.redis.addr),
                 },
                 Err(e) => ComponentStatus {
                     enabled: true,

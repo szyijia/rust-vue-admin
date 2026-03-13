@@ -33,12 +33,7 @@ pub async fn casbin_auth(
     let method = req.method().clone();
     let method_str = method_to_str(&method);
 
-    // 超级管理员（role_id=888）跳过权限检查
-    if claims.role_id == 888 {
-        return next.run(req).await.into_response();
-    }
-
-    // 检查权限
+    // 检查权限（与 gin-vue-admin 对齐，超管也需要在 casbin_rules 中有策略记录）
     let role_id_str = claims.role_id.to_string();
     let e = enforcer.read().await;
     match e.enforce(vec![role_id_str, path.clone(), method_str.to_string()]) {
