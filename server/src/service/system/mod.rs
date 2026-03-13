@@ -1,4 +1,11 @@
 pub mod sys_api;
 pub mod sys_authority;
+pub mod sys_authority_btn;
 pub mod sys_casbin;
+pub mod sys_dictionary;
+pub mod sys_dictionary_detail;
+pub mod sys_error;
 pub mod sys_menu;
+pub mod sys_operation_record;
+pub mod sys_params;
+pub mod sys_system;
