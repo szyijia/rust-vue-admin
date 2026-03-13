@@ -5,7 +5,7 @@ use tracing::{error, info, warn};
 use crate::{
     config::AppConfig,
     global::{ApiResponse, AppState},
-    initialize,
+    initialize::{self, get_config_path},
     migration::Migrator,
     utils::hash_password,
 };
@@ -254,9 +254,9 @@ async fn update_admin_password(
     Ok(())
 }
 
-/// 将数据库配置写回 config.yaml，下次启动时自动连接
+/// 将数据库配置写回配置文件（写入当前优先的配置文件），下次启动时自动连接
 async fn write_config_to_file(config: &AppConfig) -> anyhow::Result<()> {
-    let config_path = std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.yaml".to_string());
+    let config_path = get_config_path();
     let content = std::fs::read_to_string(&config_path)?;
 
     // 使用 serde_yaml 解析并更新

@@ -8,7 +8,7 @@ use tracing::{info, warn, error};
 
 use crate::config::{AppConfig, SystemConfig};
 use crate::global::AppState;
-use super::config::load_config;
+use super::config::{get_config_path, load_config};
 
 /// 防抖延迟（毫秒）——文件变更后等待一段时间再重载，避免编辑器保存时多次触发
 const DEBOUNCE_MS: u64 = 500;
@@ -20,8 +20,8 @@ const DEBOUNCE_MS: u64 = 500;
 /// 内置 500ms 防抖，避免编辑器保存时的多次触发
 /// 不可热重载的配置（数据库/Redis/端口/日志）变更时只记录日志提示重启
 pub fn start_config_watcher(state: AppState) {
-    // 确定配置文件路径
-    let config_path = std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.yaml".to_string());
+    // 确定配置文件路径（使用统一的 get_config_path 函数）
+    let config_path = get_config_path();
     let path = Path::new(&config_path).to_path_buf();
 
     // 检查文件是否存在
